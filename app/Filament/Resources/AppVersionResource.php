@@ -44,7 +44,12 @@ class AppVersionResource extends Resource
             Section::make('APK File')->schema([
                 Forms\Components\FileUpload::make('apk_path')
                     ->label('APK File')
-                    ->acceptedFileTypes(['application/vnd.android.package-archive'])
+                    ->acceptedFileTypes([
+                        'application/vnd.android.package-archive',
+                        'application/octet-stream',
+                        'application/zip',
+                        'application/x-zip-compressed',
+                    ])
                     ->maxSize(102400) // 100MB
                     ->directory('apk')
                     ->required()
