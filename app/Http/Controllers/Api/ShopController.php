@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Shop;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -61,5 +62,26 @@ class ShopController extends Controller
         $shop->approve($request->user());
 
         return response()->json(['message' => 'Shop approved.', 'shop' => $shop]);
+    }
+
+    public function pending(Request $request): JsonResponse
+    {
+        abort_if(! $request->user()->isAdminOrManager(), 403, 'Admin access required.');
+
+        $shops = Shop::where('status', Shop::STATUS_PENDING)
+            ->with('requestedBy:id,name')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json(['shops' => $shops]);
+    }
+
+    public function salespeople(): JsonResponse
+    {
+        $people = User::where('role', User::ROLE_SALESREP)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'phone']);
+
+        return response()->json(['salespeople' => $people]);
     }
 }

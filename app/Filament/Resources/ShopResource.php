@@ -6,6 +6,7 @@ use App\Filament\Resources\ShopResource\Pages;
 use App\Models\Shop;
 use Filament\Actions;
 use Filament\Forms;
+use Filament\Infolists;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -69,6 +70,12 @@ class ShopResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('image_path')
+                    ->label('Image')
+                    ->disk('public')
+                    ->circular()
+                    ->size(40)
+                    ->defaultImageUrl(url('/images/no-image.png')),
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('owner')->searchable(),
                 Tables\Columns\TextColumn::make('phone'),
@@ -111,6 +118,36 @@ class ShopResource extends Resource
                     Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->schema([
+            Section::make('Basic Info')
+                ->schema([
+                    Infolists\Components\TextEntry::make('name'),
+                    Infolists\Components\TextEntry::make('owner'),
+                    Infolists\Components\TextEntry::make('phone'),
+                    Infolists\Components\TextEntry::make('address'),
+                    Infolists\Components\TextEntry::make('gst_number')->label('GST Number'),
+                    Infolists\Components\TextEntry::make('status')
+                        ->badge()
+                        ->color(fn (string $state): string => $state === Shop::STATUS_APPROVED ? 'success' : 'warning'),
+                ])->columns(2),
+            Section::make('Location')
+                ->schema([
+                    Infolists\Components\TextEntry::make('latitude'),
+                    Infolists\Components\TextEntry::make('longitude'),
+                ])->columns(2),
+            Section::make('Shop Image')
+                ->schema([
+                    Infolists\Components\ImageEntry::make('image_path')
+                        ->disk('public')
+                        ->defaultImageUrl(url('/images/no-image.png')),
+                ]),
+            Infolists\Components\TextEntry::make('requestedBy.name')
+                ->label('Requested by'),
+        ]);
     }
 
     public static function getPages(): array

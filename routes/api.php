@@ -14,9 +14,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/products', [ProductController::class, 'index']);
+    Route::post('/products', [ProductController::class, 'store']);
     Route::get('/shops', [ShopController::class, 'index']);
     Route::post('/shops', [ShopController::class, 'store']);
+    Route::get('/shops/pending', [ShopController::class, 'pending']);
     Route::post('/shops/{shop}/approve', [ShopController::class, 'approve']);
+    Route::get('/salespeople', [ShopController::class, 'salespeople']);
 
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/my-orders', [OrderController::class, 'myOrders']);
