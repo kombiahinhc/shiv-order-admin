@@ -8,6 +8,8 @@ use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Tables;
 use Filament\Tables\Table;
 use UnitEnum;
@@ -32,7 +34,19 @@ class UserResource extends Resource
                     User::ROLE_SALESREP => 'Sales Rep',
                 ])
                 ->default(User::ROLE_SALESREP)
-                ->required(),
+                ->required()
+                ->reactive()
+                ->afterStateUpdated(function ($state, Set $set) {
+                    if ($state !== User::ROLE_SALESREP) {
+                        $set('manager_id', null);
+                    }
+                }),
+            Forms\Components\Select::make('manager_id')
+                ->label('Manager')
+                ->options(fn () => User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_MANAGER])->pluck('name', 'id'))
+                ->nullable()
+                ->visible(fn (Get $get) => $get('role') === User::ROLE_SALESREP)
+                ->searchable(),
             Forms\Components\TextInput::make('password')
                 ->password()
                 ->dehydrateStateUsing(fn ($state) => filled($state) ? Hash::make($state) : null)
@@ -49,6 +63,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('email')->searchable(),
                 Tables\Columns\TextColumn::make('phone'),
                 Tables\Columns\TextColumn::make('role')->badge(),
+                Tables\Columns\TextColumn::make('manager.name')->label('Manager')->placeholder('—'),
             ])
             ->filters([])
             ->actions([
