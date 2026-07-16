@@ -82,4 +82,24 @@ class ShopController extends Controller
 
         return response()->json(['salespeople' => $people]);
     }
+
+    public function mySalespeople(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->role === User::ROLE_ADMIN) {
+            $people = User::where('role', User::ROLE_SALESREP)
+                ->orderBy('name')
+                ->get(['id', 'name', 'email', 'phone']);
+        } elseif ($user->role === User::ROLE_MANAGER) {
+            $people = User::where('role', User::ROLE_SALESREP)
+                ->where('manager_id', $user->id)
+                ->orderBy('name')
+                ->get(['id', 'name', 'email', 'phone']);
+        } else {
+            $people = collect([$user->only(['id', 'name', 'email', 'phone'])]);
+        }
+
+        return response()->json(['salespeople' => $people]);
+    }
 }
