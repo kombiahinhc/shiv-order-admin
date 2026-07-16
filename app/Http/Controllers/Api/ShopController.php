@@ -10,9 +10,15 @@ use Illuminate\Http\Request;
 
 class ShopController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $userId = $request->user()->id;
+
         $shops = Shop::where('status', Shop::STATUS_APPROVED)
+            ->orWhere(function ($query) use ($userId) {
+                $query->where('status', Shop::STATUS_PENDING)
+                    ->where('requested_by', $userId);
+            })
             ->orderBy('name')
             ->get(['id', 'name', 'owner', 'phone', 'address', 'status', 'gst_number', 'image_path', 'latitude', 'longitude']);
 
