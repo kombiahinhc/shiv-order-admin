@@ -44,6 +44,7 @@ class AppVersionResource extends Resource
             Section::make('APK File')->schema([
                 Forms\Components\FileUpload::make('apk_path')
                     ->label('APK File')
+                    ->disk('public')
                     ->acceptedFileTypes([
                         'application/vnd.android.package-archive',
                         'application/octet-stream',
