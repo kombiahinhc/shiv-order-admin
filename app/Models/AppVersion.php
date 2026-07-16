@@ -24,6 +24,18 @@ class AppVersion extends Model
 
     public function getDownloadUrlAttribute(): string
     {
-        return asset('storage/' . $this->apk_path);
+        $path = 'storage/' . ltrim($this->apk_path, '/');
+
+        $scheme = request()->secure() ? 'https' : 'http';
+        $host = request()->getHost();
+
+        // Check if app is in a subdirectory (e.g. /public)
+        $baseUrl = config('app.url');
+        $prefix = '';
+        if ($baseUrl && parse_url($baseUrl, PHP_URL_PATH)) {
+            $prefix = rtrim(parse_url($baseUrl, PHP_URL_PATH), '/');
+        }
+
+        return $scheme . '://' . $host . $prefix . '/' . $path;
     }
 }
