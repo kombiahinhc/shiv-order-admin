@@ -66,8 +66,6 @@ class ShopController extends Controller
 
     public function pending(Request $request): JsonResponse
     {
-        abort_if(! $request->user()->isAdminOrManager(), 403, 'Admin access required.');
-
         $shops = Shop::where('status', Shop::STATUS_PENDING)
             ->with('requestedBy:id,name')
             ->orderByDesc('created_at')
