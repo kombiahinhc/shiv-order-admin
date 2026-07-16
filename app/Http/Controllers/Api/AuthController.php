@@ -47,4 +47,24 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Logged out']);
     }
+
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
+            ]);
+        }
+
+        $user->update(['password' => $data['password']]);
+
+        return response()->json(['message' => 'Password updated successfully']);
+    }
 }
