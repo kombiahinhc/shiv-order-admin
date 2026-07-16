@@ -80,7 +80,6 @@ class OrderController extends Controller
                 $order = Order::updateOrCreate(
                     ['local_uuid' => $orderData['local_uuid']],
                     [
-                        'salesperson_id' => $salespersonId,
                         'shop_id' => $orderData['shop_id'] ?? null,
                         'shop_name_snapshot' => $orderData['shop_name_snapshot'] ?? null,
                         'order_date' => $orderData['order_date'],
@@ -94,6 +93,10 @@ class OrderController extends Controller
                         'synced_at' => now(),
                     ]
                 );
+
+                if ($order->wasRecentlyCreated) {
+                    $order->update(['salesperson_id' => $salespersonId]);
+                }
 
                 $order->lines()->delete();
                 foreach ($lines as $line) {
