@@ -77,25 +77,26 @@ class OrderController extends Controller
                     $orderData['discount_value']
                 );
 
-                $order = Order::updateOrCreate(
+                $order = Order::firstOrCreate(
+                    ['local_uuid' => $orderData['local_uuid']],
                     [
-                        'local_uuid' => $orderData['local_uuid'],
                         'salesperson_id' => $salespersonId,
-                    ],
-                    [
-                        'shop_id' => $orderData['shop_id'] ?? null,
-                        'shop_name_snapshot' => $orderData['shop_name_snapshot'] ?? null,
-                        'order_date' => $orderData['order_date'],
-                        'notes' => $orderData['notes'] ?? null,
-                        'discount_type' => $orderData['discount_type'],
-                        'discount_value' => $orderData['discount_value'],
-                        'subtotal' => $totals['subtotal'],
-                        'tax_total' => $totals['tax_total'],
-                        'grand_total' => $totals['grand_total'],
-                        'sync_status' => Order::SYNC_SYNCED,
-                        'synced_at' => now(),
                     ]
                 );
+
+                $order->update([
+                    'shop_id' => $orderData['shop_id'] ?? null,
+                    'shop_name_snapshot' => $orderData['shop_name_snapshot'] ?? null,
+                    'order_date' => $orderData['order_date'],
+                    'notes' => $orderData['notes'] ?? null,
+                    'discount_type' => $orderData['discount_type'],
+                    'discount_value' => $orderData['discount_value'],
+                    'subtotal' => $totals['subtotal'],
+                    'tax_total' => $totals['tax_total'],
+                    'grand_total' => $totals['grand_total'],
+                    'sync_status' => Order::SYNC_SYNCED,
+                    'synced_at' => now(),
+                ]);
 
                 $order->lines()->delete();
                 foreach ($lines as $line) {
