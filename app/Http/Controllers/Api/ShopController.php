@@ -108,4 +108,30 @@ class ShopController extends Controller
 
         return response()->json(['salespeople' => $people]);
     }
+
+    /**
+     * Return all users the current user can see (for name lookups).
+     * Admin sees all users, manager sees themselves + subordinates, regular user sees only themselves.
+     */
+    public function usersForLookup(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->role === User::ROLE_ADMIN) {
+            $people = User::orderBy('name')
+                ->get(['id', 'name', 'email', 'role']);
+        } elseif ($user->role === User::ROLE_MANAGER) {
+            $people = User::where('id', $user->id)
+                ->orWhere(function ($query) use ($user) {
+                    $query->where('role', User::ROLE_SALESREP)
+                        ->where('manager_id', $user->id);
+                })
+                ->orderBy('name')
+                ->get(['id', 'name', 'email', 'role']);
+        } else {
+            $people = collect([$user->only(['id', 'name', 'email', 'role'])]);
+        }
+
+        return response()->json(['users' => $people]);
+    }
 }
