@@ -22,20 +22,21 @@ class AppVersion extends Model
         'is_force_update' => 'boolean',
     ];
 
-    public function getDownloadUrlAttribute(): string
+    public function getDownloadUrlAttribute(): ?string
     {
-        $path = 'storage/' . ltrim($this->apk_path, '/');
-
-        $scheme = request()->secure() ? 'https' : 'http';
-        $host = request()->getHost();
-
-        // Check if app is in a subdirectory (e.g. /public)
-        $baseUrl = config('app.url');
-        $prefix = '';
-        if ($baseUrl && parse_url($baseUrl, PHP_URL_PATH)) {
-            $prefix = rtrim(parse_url($baseUrl, PHP_URL_PATH), '/');
+        if (empty($this->apk_path)) {
+            return null;
         }
 
-        return $scheme . '://' . $host . $prefix . '/' . $path;
+        $path = 'storage/' . ltrim($this->apk_path, '/');
+        $baseUrl = rtrim(config('app.url', ''), '/');
+
+        if (empty($baseUrl)) {
+            // Fallback to request host if app.url is not configured
+            $scheme = request()->secure() ? 'https' : 'http';
+            $baseUrl = $scheme . '://' . request()->getHost();
+        }
+
+        return $baseUrl . '/' . $path;
     }
 }
