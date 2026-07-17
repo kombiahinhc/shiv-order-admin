@@ -25,6 +25,7 @@ class AppVersionController extends Controller
             'release_notes' => $latest->release_notes,
             'is_force_update' => $latest->is_force_update,
             'download_url' => $latest->download_url,
+            'new_api_url' => $latest->new_api_url,
         ]);
     }
 }

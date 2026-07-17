@@ -16,6 +16,7 @@ class AppVersion extends Model
         'apk_path',
         'release_notes',
         'is_force_update',
+        'new_api_url',
     ];
 
     protected $casts = [
