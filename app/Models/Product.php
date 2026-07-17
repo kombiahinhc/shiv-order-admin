@@ -13,13 +13,14 @@ class Product extends Model
 
     protected $fillable = [
         'name', 'sku', 'category', 'unit', 'list_price', 'mrp',
-        'tax_rate', 'active', 'image_path',
+        'tax_rate', 'is_tax_inclusive', 'active', 'image_path',
     ];
 
     protected $casts = [
         'list_price' => 'decimal:2',
         'mrp' => 'decimal:2',
         'tax_rate' => 'decimal:2',
+        'is_tax_inclusive' => 'boolean',
         'active' => 'boolean',
     ];
 

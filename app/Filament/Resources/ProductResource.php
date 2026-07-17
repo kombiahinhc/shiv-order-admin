@@ -30,6 +30,7 @@ class ProductResource extends Resource
                 Forms\Components\TextInput::make('list_price')->numeric()->required()->default(0)->prefix('₹'),
                 Forms\Components\TextInput::make('mrp')->numeric()->default(0)->prefix('₹'),
                 Forms\Components\TextInput::make('tax_rate')->numeric()->required()->default(0)->suffix('%'),
+                Forms\Components\Toggle::make('is_tax_inclusive')->label('Tax Inclusive')->default(false),
                 Forms\Components\Toggle::make('active')->default(true),
             ])->columns(2),
             Section::make('Product Image')->schema([
@@ -56,6 +57,7 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('list_price')->money('INR')->sortable(),
                 Tables\Columns\TextColumn::make('mrp')->money('INR')->sortable(),
                 Tables\Columns\TextColumn::make('tax_rate')->suffix('%'),
+                Tables\Columns\IconColumn::make('is_tax_inclusive')->label('Tax Incl.')->boolean(),
                 Tables\Columns\IconColumn::make('active')->boolean(),
             ])
             ->filters([
