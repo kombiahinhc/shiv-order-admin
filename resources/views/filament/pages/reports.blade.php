@@ -24,6 +24,14 @@
         .sales-report-table .center { text-align: center; }
         .sales-report-table .right { text-align: right; }
         .sales-report-table .amount { font-weight: 700; }
+        .sales-report-table .details-button { border: 1px solid #4b5563; border-radius: .375rem; padding: .35rem .65rem; background: transparent; color: #e5e7eb; cursor: pointer; font-size: .8rem; }
+        .sales-report-table .details-button:hover { background: #303030; }
+        .sales-report-order-details td { padding: 0; background: #151515; }
+        .sales-report-line-items { width: calc(100% - 2.5rem); margin: 0 1.25rem 1.25rem; border: 1px solid #374151; border-collapse: collapse; font-size: .85rem; }
+        .sales-report-line-items caption { padding: 1rem 0 .65rem; font-weight: 700; text-align: left; }
+        .sales-report-line-items th, .sales-report-line-items td { padding: .7rem .85rem; border: 1px solid #374151; text-align: left; }
+        .sales-report-line-items th { background: #242424; color: #a1a1aa; font-size: .7rem; letter-spacing: .04em; text-transform: uppercase; }
+        .sales-report-line-items .number { text-align: right; }
         .sales-report-empty { padding: 3.5rem 1.5rem; text-align: center; }
         .sales-report-empty p { margin: 0; }
         .sales-report-empty p + p { margin-top: .25rem; color: #9ca3af; font-size: .875rem; }
@@ -97,18 +105,51 @@
                         <table class="sales-report-table">
                             <thead>
                                 <tr>
-                                    <th>Date</th><th>Sales rep</th><th>Shop</th><th class="center">Items</th><th class="right">Grand total</th>
+                                    <th>Order ID</th><th>Date</th><th>Sales rep</th><th>Shop</th><th class="center">Items</th><th class="right">Grand total</th><th class="right">Details</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($reportOrders as $order)
                                     <tr>
+                                        <td>#{{ $order['id'] }}</td>
                                         <td>{{ \Illuminate\Support\Carbon::parse($order['order_date'])->format('d M Y') }}</td>
                                         <td>{{ $order['salesperson']['name'] ?? 'Unassigned' }}</td>
                                         <td>{{ $order['shop']['name'] ?? $order['shop_name_snapshot'] ?? 'N/A' }}</td>
                                         <td class="center">{{ count($order['lines'] ?? []) }}</td>
                                         <td class="right amount">₹{{ number_format($order['grand_total'], 2) }}</td>
+                                        <td class="right">
+                                            <button type="button" class="details-button" wire:click="toggleOrderDetails({{ $order['id'] }})">
+                                                {{ $expandedOrderId === $order['id'] ? 'Hide' : 'View' }}
+                                            </button>
+                                        </td>
                                     </tr>
+                                    @if($expandedOrderId === $order['id'])
+                                        <tr class="sales-report-order-details">
+                                            <td colspan="7">
+                                                <table class="sales-report-line-items">
+                                                    <caption>Order items</caption>
+                                                    <thead>
+                                                        <tr><th>Product</th><th>Unit</th><th class="number">Quantity</th><th class="number">Unit price</th><th class="number">Discount</th><th class="number">Tax</th><th class="number">Line total</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($order['lines'] ?? [] as $line)
+                                                            <tr>
+                                                                <td>{{ $line['product_name'] }}</td>
+                                                                <td>{{ $line['unit'] ?? '—' }}</td>
+                                                                <td class="number">{{ number_format($line['qty'], 2) }}</td>
+                                                                <td class="number">₹{{ number_format($line['unit_price'], 2) }}</td>
+                                                                <td class="number">₹{{ number_format($line['discount'], 2) }}</td>
+                                                                <td class="number">{{ number_format($line['tax_rate'], 2) }}%</td>
+                                                                <td class="number"><strong>₹{{ number_format($line['line_total'], 2) }}</strong></td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr><td colspan="7">No line items are available for this order.</td></tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    @endif
                                 @endforeach
                             </tbody>
                         </table>

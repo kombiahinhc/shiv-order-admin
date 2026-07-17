@@ -46,6 +46,8 @@ class ReportsPage extends Page implements HasForms
 
     public ?array $reportSummary = null;
 
+    public ?int $expandedOrderId = null;
+
     public function mount(): void
     {
         $this->form->fill([
@@ -88,7 +90,10 @@ class ReportsPage extends Page implements HasForms
             $query->whereIn('salesperson_id', $data['salesperson_ids']);
         }
 
-        $orders = $query->orderByDesc('order_date')->get();
+        $orders = $query
+            ->orderByDesc('order_date')
+            ->orderByDesc('id')
+            ->get();
 
         $this->reportOrders = $orders->toArray();
 
@@ -102,6 +107,13 @@ class ReportsPage extends Page implements HasForms
             'total_tax' => $orders->sum('tax_total'),
             'total_discount' => $orders->sum('discount_value'),
         ];
+
+        $this->expandedOrderId = null;
+    }
+
+    public function toggleOrderDetails(int $orderId): void
+    {
+        $this->expandedOrderId = $this->expandedOrderId === $orderId ? null : $orderId;
     }
 
     public function getTable(): Table
@@ -140,13 +152,14 @@ class ReportsPage extends Page implements HasForms
 
         $writer = new Writer;
         $writer->openToFile($path);
+        $writer->getCurrentSheet()->setName('Orders');
         $writer->addRow(Row::fromValues(['Sales report']));
         $writer->addRow(Row::fromValues([
             'Period',
             Carbon::parse($this->formData['from_date'])->format('d M Y').' – '.Carbon::parse($this->formData['to_date'])->format('d M Y'),
         ]));
         $writer->addRow(Row::fromValues([]));
-        $writer->addRow(Row::fromValues(['Date', 'Sales Rep', 'Shop', 'Items', 'Subtotal', 'Tax', 'Discount', 'Grand Total']));
+        $writer->addRow(Row::fromValues(['Order ID', 'Date', 'Sales Rep', 'Shop', 'Items', 'Subtotal', 'Tax', 'Discount', 'Grand Total']));
 
         foreach ($orders as $order) {
             $writer->addRow(Row::fromValues($this->exportRow($order)));
@@ -154,8 +167,31 @@ class ReportsPage extends Page implements HasForms
 
         $writer->addRow(Row::fromValues([]));
         $writer->addRow(Row::fromValues([
-            'Grand total', '', '', '', '', '', '', (float) ($this->reportSummary['total_revenue'] ?? 0),
+            'Grand total', '', '', '', '', '', '', '', (float) ($this->reportSummary['total_revenue'] ?? 0),
         ]));
+
+        $writer->addNewSheetAndMakeItCurrent()->setName('Order items');
+        $writer->addRow(Row::fromValues([
+            'Order ID', 'Order Date', 'Sales Rep', 'Shop', 'Product', 'Unit', 'Quantity', 'Unit Price', 'Discount', 'Tax Rate', 'Line Total',
+        ]));
+
+        foreach ($orders as $order) {
+            foreach ($order['lines'] ?? [] as $line) {
+                $writer->addRow(Row::fromValues([
+                    $order['id'],
+                    Carbon::parse($order['order_date'])->format('d M Y'),
+                    $order['salesperson']['name'] ?? '',
+                    $order['shop']['name'] ?? $order['shop_name_snapshot'] ?? 'N/A',
+                    $line['product_name'] ?? '',
+                    $line['unit'] ?? '',
+                    (float) $line['qty'],
+                    (float) $line['unit_price'],
+                    (float) $line['discount'],
+                    (float) $line['tax_rate'],
+                    (float) $line['line_total'],
+                ]));
+            }
+        }
 
         $writer->close();
 
@@ -189,6 +225,7 @@ class ReportsPage extends Page implements HasForms
     private function exportRow(array $order): array
     {
         return [
+            $order['id'],
             Carbon::parse($order['order_date'])->format('d M Y'),
             $order['salesperson']['name'] ?? '',
             $order['shop']['name'] ?? $order['shop_name_snapshot'] ?? 'N/A',
