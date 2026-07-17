@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class AppVersion extends Model
 {
@@ -22,6 +23,21 @@ class AppVersion extends Model
         'is_force_update' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::updating(function (AppVersion $version) {
+            if ($version->isDirty('apk_path') && $version->getOriginal('apk_path')) {
+                Storage::disk('public_storage')->delete($version->getOriginal('apk_path'));
+            }
+        });
+
+        static::deleted(function (AppVersion $version) {
+            if ($version->apk_path) {
+                Storage::disk('public_storage')->delete($version->apk_path);
+            }
+        });
+    }
+
     public function getDownloadUrlAttribute(): ?string
     {
         if (empty($this->apk_path)) {
@@ -32,7 +48,6 @@ class AppVersion extends Model
         $baseUrl = rtrim(config('app.url', ''), '/');
 
         if (empty($baseUrl)) {
-            // Fallback to request host if app.url is not configured
             $scheme = request()->secure() ? 'https' : 'http';
             $baseUrl = $scheme . '://' . request()->getHost();
         }
