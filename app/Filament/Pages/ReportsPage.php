@@ -4,16 +4,18 @@ namespace App\Filament\Pages;
 
 use App\Models\Order;
 use App\Models\User;
-use Filament\Forms;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Schemas\Schema;
 use Filament\Pages\Page;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Writer\XLSX\Writer;
 
 class ReportsPage extends Page implements HasForms
 {
@@ -35,7 +37,7 @@ class ReportsPage extends Page implements HasForms
     }
 
     public ?array $formData = [
-        'salesperson_id' => null,
+        'salesperson_ids' => [],
         'from_date' => null,
         'to_date' => null,
     ];
@@ -56,11 +58,13 @@ class ReportsPage extends Page implements HasForms
     {
         return $form
             ->schema([
-                Select::make('salesperson_id')
-                    ->label('Sales Person')
+                Select::make('salesperson_ids')
+                    ->label('Sales Representatives')
                     ->options(fn () => User::pluck('name', 'id'))
-                    ->placeholder('All Sales Persons')
-                    ->searchable(),
+                    ->placeholder('All Sales Representatives')
+                    ->searchable()
+                    ->multiple()
+                    ->preload(),
                 DatePicker::make('from_date')
                     ->label('From Date')
                     ->required(),
@@ -68,6 +72,7 @@ class ReportsPage extends Page implements HasForms
                     ->label('To Date')
                     ->required(),
             ])
+            ->columns(3)
             ->statePath('formData');
     }
 
@@ -79,8 +84,8 @@ class ReportsPage extends Page implements HasForms
             ->whereDate('order_date', '>=', $data['from_date'])
             ->whereDate('order_date', '<=', $data['to_date']);
 
-        if (!empty($data['salesperson_id'])) {
-            $query->where('salesperson_id', $data['salesperson_id']);
+        if (! empty($data['salesperson_ids'])) {
+            $query->whereIn('salesperson_id', $data['salesperson_ids']);
         }
 
         $orders = $query->orderByDesc('order_date')->get();
@@ -127,37 +132,73 @@ class ReportsPage extends Page implements HasForms
             ->emptyStateDescription('Click "Generate Report" to load data.');
     }
 
-    public function exportCsv(): void
+    public function exportExcel()
     {
         $orders = $this->reportOrders ?? [];
+        $filename = $this->exportFilename('xlsx');
+        $path = tempnam(sys_get_temp_dir(), 'sales-report-');
 
-        $headers = ['Date', 'Sales Rep', 'Shop', 'Items', 'Subtotal', 'Tax', 'Discount', 'Grand Total'];
+        $writer = new Writer;
+        $writer->openToFile($path);
+        $writer->addRow(Row::fromValues(['Sales report']));
+        $writer->addRow(Row::fromValues([
+            'Period',
+            Carbon::parse($this->formData['from_date'])->format('d M Y').' – '.Carbon::parse($this->formData['to_date'])->format('d M Y'),
+        ]));
+        $writer->addRow(Row::fromValues([]));
+        $writer->addRow(Row::fromValues(['Date', 'Sales Rep', 'Shop', 'Items', 'Subtotal', 'Tax', 'Discount', 'Grand Total']));
 
-        $callback = function () use ($orders, $headers) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, $headers);
+        foreach ($orders as $order) {
+            $writer->addRow(Row::fromValues($this->exportRow($order)));
+        }
 
-            foreach ($orders as $order) {
-                fputcsv($handle, [
-                    $order['order_date'],
-                    $order['salesperson']['name'] ?? '',
-                    $order['shop']['name'] ?? $order['shop_name_snapshot'] ?? '',
-                    count($order['lines'] ?? []),
-                    $order['subtotal'],
-                    $order['tax_total'],
-                    $order['discount_value'],
-                    $order['grand_total'],
-                ]);
-            }
+        $writer->close();
 
-            fclose($handle);
-        };
+        return response()->streamDownload(function () use ($path): void {
+            readfile($path);
+            unlink($path);
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
 
-        $csvHeaders = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="sales_report_' . now()->format('Ymd') . '.csv"',
+    public function exportPdf()
+    {
+        $pdf = Pdf::loadView('reports.sales-pdf', [
+            'orders' => $this->reportOrders ?? [],
+            'summary' => $this->reportSummary ?? [],
+            'fromDate' => Carbon::parse($this->formData['from_date']),
+            'toDate' => Carbon::parse($this->formData['to_date']),
+            'salesperson' => ! empty($this->formData['salesperson_ids'])
+                ? User::whereIn('id', $this->formData['salesperson_ids'])->pluck('name')->join(', ')
+                : null,
+        ])->setPaper('a4', 'landscape');
+
+        return response()->streamDownload(function () use ($pdf): void {
+            echo $pdf->output();
+        }, $this->exportFilename('pdf'), [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    private function exportRow(array $order): array
+    {
+        return [
+            Carbon::parse($order['order_date'])->format('d M Y'),
+            $order['salesperson']['name'] ?? '',
+            $order['shop']['name'] ?? $order['shop_name_snapshot'] ?? 'N/A',
+            count($order['lines'] ?? []),
+            (float) $order['subtotal'],
+            (float) $order['tax_total'],
+            (float) $order['discount_value'],
+            (float) $order['grand_total'],
         ];
+    }
 
-        response()->stream($callback, 200, $csvHeaders)->send();
+    private function exportFilename(string $extension): string
+    {
+        return 'sales-report-'.Carbon::parse($this->formData['from_date'])->format('Ymd')
+            .'-to-'.Carbon::parse($this->formData['to_date'])->format('Ymd')
+            .'.'.$extension;
     }
 }
