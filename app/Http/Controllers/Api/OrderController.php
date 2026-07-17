@@ -63,6 +63,7 @@ class OrderController extends Controller
             'orders.*.lines.*.unit_price' => ['required', 'numeric', 'min:0'],
             'orders.*.lines.*.discount' => ['nullable', 'numeric', 'min:0'],
             'orders.*.lines.*.tax_rate' => ['nullable', 'numeric', 'min:0'],
+            'orders.*.lines.*.is_tax_inclusive' => ['nullable', 'boolean'],
         ]);
 
         $results = [];
@@ -108,6 +109,7 @@ class OrderController extends Controller
                         'unit_price' => $line['unit_price'],
                         'discount' => $line['discount'] ?? 0,
                         'tax_rate' => $line['tax_rate'] ?? 0,
+                        'is_tax_inclusive' => ! empty($line['is_tax_inclusive']),
                         'line_total' => max(0, (float) $line['qty'] * (float) $line['unit_price'] - (float) ($line['discount'] ?? 0)),
                     ]);
                 }

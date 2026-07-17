@@ -7,6 +7,7 @@ use App\Models\Product;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -21,13 +22,25 @@ class ProductResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Forms\Components\TextInput::make('name')->required()->maxLength(255),
-            Forms\Components\TextInput::make('sku')->maxLength(255),
-            Forms\Components\TextInput::make('category')->maxLength(255),
-            Forms\Components\TextInput::make('unit')->maxLength(50),
-            Forms\Components\TextInput::make('list_price')->numeric()->required()->default(0)->prefix('₹'),
-            Forms\Components\TextInput::make('tax_rate')->numeric()->required()->default(0)->suffix('%'),
-            Forms\Components\Toggle::make('active')->default(true),
+            Section::make('Product Details')->schema([
+                Forms\Components\TextInput::make('name')->required()->maxLength(255),
+                Forms\Components\TextInput::make('sku')->maxLength(255),
+                Forms\Components\TextInput::make('category')->maxLength(255),
+                Forms\Components\TextInput::make('unit')->maxLength(50),
+                Forms\Components\TextInput::make('list_price')->numeric()->required()->default(0)->prefix('₹'),
+                Forms\Components\TextInput::make('mrp')->numeric()->default(0)->prefix('₹'),
+                Forms\Components\TextInput::make('tax_rate')->numeric()->required()->default(0)->suffix('%'),
+                Forms\Components\Toggle::make('active')->default(true),
+            ])->columns(2),
+            Section::make('Product Image')->schema([
+                Forms\Components\FileUpload::make('image_path')
+                    ->label('Product Image')
+                    ->image()
+                    ->disk('public_storage')
+                    ->directory('products')
+                    ->maxSize(5120)
+                    ->columnSpanFull(),
+            ]),
         ]);
     }
 
@@ -35,11 +48,13 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('image_path')->disk('public_storage')->label('Image'),
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('sku')->searchable(),
                 Tables\Columns\TextColumn::make('category')->searchable(),
                 Tables\Columns\TextColumn::make('unit'),
                 Tables\Columns\TextColumn::make('list_price')->money('INR')->sortable(),
+                Tables\Columns\TextColumn::make('mrp')->money('INR')->sortable(),
                 Tables\Columns\TextColumn::make('tax_rate')->suffix('%'),
                 Tables\Columns\IconColumn::make('active')->boolean(),
             ])

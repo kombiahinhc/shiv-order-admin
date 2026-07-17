@@ -13,7 +13,7 @@ class ProductController extends Controller
     {
         $products = Product::where('active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'category', 'unit', 'list_price', 'tax_rate']);
+            ->get(['id', 'name', 'sku', 'category', 'unit', 'list_price', 'mrp', 'tax_rate', 'image_path']);
 
         return response()->json(['products' => $products]);
     }
@@ -28,6 +28,7 @@ class ProductController extends Controller
             'category' => ['nullable', 'string', 'max:100'],
             'unit' => ['nullable', 'string', 'max:20'],
             'list_price' => ['required', 'numeric', 'min:0'],
+            'mrp' => ['nullable', 'numeric', 'min:0'],
             'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
@@ -37,6 +38,7 @@ class ProductController extends Controller
             'category' => $data['category'] ?? null,
             'unit' => $data['unit'] ?? null,
             'list_price' => $data['list_price'],
+            'mrp' => $data['mrp'] ?? null,
             'tax_rate' => $data['tax_rate'] ?? 0,
             'active' => true,
         ]);

@@ -13,6 +13,7 @@ class OrderLine extends Model
     protected $fillable = [
         'order_id', 'product_id', 'product_name', 'unit',
         'qty', 'unit_price', 'discount', 'tax_rate', 'line_total',
+        'is_tax_inclusive',
     ];
 
     protected $casts = [
@@ -21,6 +22,7 @@ class OrderLine extends Model
         'discount' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'line_total' => 'decimal:2',
+        'is_tax_inclusive' => 'boolean',
     ];
 
     public function order(): BelongsTo
