@@ -8,13 +8,14 @@
         h1 { margin: 0; font-size: 22px; color: #111827; }
         .subtle { color: #64748b; margin: 5px 0 20px; }
         .summary { width: 100%; border-collapse: separate; border-spacing: 8px 0; margin: 0 -8px 22px; }
-        .summary td { width: 25%; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; }
+        .summary td { width: 50%; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; }
         .label { color: #64748b; font-size: 9px; text-transform: uppercase; }
         .value { font-size: 17px; font-weight: bold; margin-top: 5px; color: #0f172a; }
         table.orders { width: 100%; border-collapse: collapse; }
         .orders th { background: #1e3a5f; color: #fff; text-align: left; font-size: 9px; padding: 9px 8px; text-transform: uppercase; }
         .orders td { border-bottom: 1px solid #e2e8f0; padding: 8px; }
         .orders tr:nth-child(even) td { background: #f8fafc; }
+        .orders tfoot td { background: #eaf2ff; border-top: 2px solid #1e3a5f; padding: 10px 8px; }
         .number { text-align: right !important; }
         .center { text-align: center !important; }
         .footer { position: fixed; bottom: 0; color: #94a3b8; font-size: 8px; }
@@ -30,9 +31,7 @@
     <table class="summary">
         <tr>
             <td><div class="label">Total orders</div><div class="value">{{ number_format($summary['count'] ?? 0) }}</div></td>
-            <td><div class="label">Total revenue</div><div class="value">₹{{ number_format($summary['total_revenue'] ?? 0, 0) }}</div></td>
-            <td><div class="label">Avg. order value</div><div class="value">₹{{ number_format($summary['average_order_value'] ?? 0, 0) }}</div></td>
-            <td><div class="label">Total tax</div><div class="value">₹{{ number_format($summary['total_tax'] ?? 0, 0) }}</div></td>
+            <td><div class="label">Total order value</div><div class="value">₹{{ number_format($summary['total_revenue'] ?? 0, 0) }}</div></td>
         </tr>
     </table>
 
@@ -54,6 +53,12 @@
                 <tr><td colspan="8" class="center">No orders matched the selected filters.</td></tr>
             @endforelse
         </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="7" class="number"><strong>Grand total</strong></td>
+                <td class="number"><strong>₹{{ number_format($summary['total_revenue'] ?? 0, 2) }}</strong></td>
+            </tr>
+        </tfoot>
     </table>
     <div class="footer">Generated on {{ now()->format('d M Y, h:i A') }}</div>
 </body>

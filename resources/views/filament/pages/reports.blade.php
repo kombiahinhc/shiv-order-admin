@@ -10,7 +10,7 @@
         .sales-report-form h2, .sales-report-table-card h2 { margin: 0; font-size: 1rem; }
         .sales-report-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid #374151; }
         .sales-report-actions-label { color: #9ca3af; font-size: .875rem; }
-        .sales-report-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+        .sales-report-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
         .sales-report-stat { padding: 1.25rem; }
         .sales-report-stat-label { color: #9ca3af; font-size: .875rem; }
         .sales-report-stat-value { margin: .5rem 0 0; font-size: 1.6rem; font-weight: 700; }
@@ -77,16 +77,8 @@
                     <p class="sales-report-stat-value">{{ number_format($reportSummary['count']) }}</p>
                 </div>
                 <div class="sales-report-stat">
-                    <span class="sales-report-stat-label">Total revenue</span>
+                    <span class="sales-report-stat-label">Total order value</span>
                     <p class="sales-report-stat-value">₹{{ number_format($reportSummary['total_revenue'], 0) }}</p>
-                </div>
-                <div class="sales-report-stat">
-                    <span class="sales-report-stat-label">Average order value</span>
-                    <p class="sales-report-stat-value">₹{{ number_format($reportSummary['average_order_value'], 0) }}</p>
-                </div>
-                <div class="sales-report-stat">
-                    <span class="sales-report-stat-label">Total tax</span>
-                    <p class="sales-report-stat-value">₹{{ number_format($reportSummary['total_tax'], 0) }}</p>
                 </div>
             </div>
         @endif

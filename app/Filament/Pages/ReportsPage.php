@@ -152,6 +152,11 @@ class ReportsPage extends Page implements HasForms
             $writer->addRow(Row::fromValues($this->exportRow($order)));
         }
 
+        $writer->addRow(Row::fromValues([]));
+        $writer->addRow(Row::fromValues([
+            'Grand total', '', '', '', '', '', '', (float) ($this->reportSummary['total_revenue'] ?? 0),
+        ]));
+
         $writer->close();
 
         return response()->streamDownload(function () use ($path): void {
